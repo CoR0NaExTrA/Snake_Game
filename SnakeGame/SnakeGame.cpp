@@ -7,6 +7,7 @@
 #include <conio.h>
 #include <chrono>
 #include <thread>
+#include <map>
 
 using namespace std;
 using namespace this_thread;
@@ -23,8 +24,15 @@ const char UP_DIRECTION = 'w';
 const char LEFT_DIRECTION = 'a';
 const char DOWN_DIRECTION = 's';
 const char RIGHT_DIRECTION = 'd';
-const int targetFPS = 10; // Частота кадров
-const int frameDuration = 1000 / targetFPS; // Длительность одного кадра в миллисекундах
+const char EXIT_CHAR = 'q';
+const int TARGET_FPS = 10; // Частота кадров
+const int FRAME_DURACTION = 1000 / TARGET_FPS; // Длительность одного кадра в миллисекундах
+
+std::map<char, char> LAYOUT_MAP = {
+    {'w', 'w'}, {'a', 'a'}, {'s', 's'}, {'d', 'd'}, // Английские
+    {'ц', 'w'}, {'ф', 'a'}, {'ы', 's'}, {'в', 'd'}, // Русские
+    {'q', 'q'}, {'й', 'q'}                          // Выход
+};
 
 struct Apple 
 {
@@ -208,6 +216,14 @@ void UpdateScreenBuffer(const vector<vector<char>>& field, const Snake& snake, c
     DrawToScreenBuffer(apple.x, apple.y, CHAR_APPLE);
 }
 
+char GetDirectionInput() {
+    char input = static_cast<char>(_getch());
+    if (LAYOUT_MAP.find(input) != LAYOUT_MAP.end()) {
+        return LAYOUT_MAP[input]; // Преобразуем символ в соответствующий
+    }
+    return input; // Если символ не найден в карте, возвращаем как есть
+}
+
 int main() 
 {
     vector<vector<char>> field(COUNT_ROW, vector<char>(COUNT_COLUMN));
@@ -229,12 +245,14 @@ int main()
         // Начало кадра
         auto frameStart = high_resolution_clock::now();
 
-        // Очищаем буфер ввода
-
         // Обрабатываем ввод
         if (_kbhit()) 
         {
-            char input = _getch();
+            char input = GetDirectionInput();
+
+            if (input == EXIT_CHAR) {
+                break;
+            }
 
             // Обрабатываем только допустимые направления
             if ((input == UP_DIRECTION || input == DOWN_DIRECTION || input == LEFT_DIRECTION || input == RIGHT_DIRECTION) &&
@@ -279,9 +297,9 @@ int main()
         // Завершение кадра
         auto frameEnd = high_resolution_clock::now();
         auto elapsedTime = duration_cast<milliseconds>(frameEnd - frameStart).count();
-        if (elapsedTime < frameDuration) 
+        if (elapsedTime < FRAME_DURACTION) 
         {
-            this_thread::sleep_for(milliseconds(frameDuration - elapsedTime));
+            this_thread::sleep_for(milliseconds(FRAME_DURACTION - elapsedTime));
         }
     }
 
